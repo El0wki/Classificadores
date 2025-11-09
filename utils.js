@@ -1,3 +1,11 @@
+export function euclideanDistance(pointA, pointB) {
+  let squareSum = 0;
+  for (let i = 0; i < pointA.length; i++) {
+    squareSum += (pointA[i] - pointB[i]) ** 2;
+  }
+  return Math.sqrt(squareSum);
+}
+
 export function dotProduct(vectorA, vectorB) {
   let sum = 0;
   for (let i = 0; i < vectorA.length; i++) {
@@ -13,4 +21,5 @@ export function sigmoid(x) {
 export default {
   dotProduct,
   sigmoid,
+  euclideanDistance,
 };
