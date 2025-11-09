@@ -96,7 +96,7 @@ for (const line of data) {
 }
 
 const k = 3;
-const numTestes = 23000;
+const numTestes = 4000;
 
 const relatorioFinal = executeMultipleTimes(
   iris_data,
@@ -126,4 +126,27 @@ const melhorTabela = analyzeClusters(
   iris_ans_keys
 );
 
-console.table(melhorTabela);
+// ...existing code...
+function summarizeMapping(mapping) {
+  const summary = {};
+  for (const cluster in mapping) {
+    const counts = mapping[cluster];
+    let bestLabel = null;
+    let bestCount = -1;
+    for (const label in counts) {
+      if (counts[label] > bestCount) {
+        bestCount = counts[label];
+        bestLabel = label;
+      }
+    }
+    summary[`Cluster ${cluster}`] = {
+      majority: bestLabel,
+      majorityCount: bestCount,
+      totals: counts,
+    };
+  }
+  return summary;
+}
+
+console.log("\nMelhor Mapeamento Encontrado (resumo):");
+console.table(summarizeMapping(melhorTabela));

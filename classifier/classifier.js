@@ -1,3 +1,4 @@
+// ...existing code...
 import Neuron from "./neuron.js";
 import { data } from "../material_apoio/iris.js";
 
@@ -11,10 +12,32 @@ function calculateNeuronAccuracy(neuron, testData) {
   return correct / testData.length;
 }
 
+function analyzePredictions(neuron, inputsArray, ansKeys) {
+  const mapping = {};
+
+  for (let i = 0; i < inputsArray.length; i++) {
+    const input = inputsArray[i];
+    const realAns = ansKeys[i];
+    const predFloat = neuron.forward(input);
+    const pred = String(Math.round(predFloat)); // "0" or "1"
+
+    if (!mapping[pred]) mapping[pred] = {};
+    if (!mapping[pred][realAns]) mapping[pred][realAns] = 0;
+    mapping[pred][realAns]++;
+  }
+
+  return mapping;
+}
+
 function runMultipleNeuronTrials(trainingSet, numTrials) {
   const allAccuracies = [];
   const epochs = 1000;
-  console.log(`Starting ${numTrials} training runs...`);
+
+  let bestAccuracy = 0;
+  let bestNeuron = null;
+
+  console.log(`Iniciando ${numTrials} execuções de treinamento...`);
+
   for (let i = 0; i < numTrials; i++) {
     const neuron = new Neuron(4);
     for (let e = 0; e < epochs; e++) {
@@ -24,13 +47,26 @@ function runMultipleNeuronTrials(trainingSet, numTrials) {
     }
     const runAccuracy = calculateNeuronAccuracy(neuron, trainingSet);
     allAccuracies.push(runAccuracy);
+
+    if (runAccuracy > bestAccuracy) {
+      bestAccuracy = runAccuracy;
+      bestNeuron = neuron;
+    }
   }
-  console.log("Training runs finished.");
+
+  console.log("Execuções finalizadas.");
+
   const sum = allAccuracies.reduce((acc, val) => acc + val, 0);
   const meanAccuracy = sum / numTrials;
-  const bestAccuracy = Math.max(...allAccuracies);
   const worstAccuracy = Math.min(...allAccuracies);
-  return { meanAccuracy, bestAccuracy, worstAccuracy };
+
+  return {
+    meanAccuracy,
+    bestAccuracy,
+    worstAccuracy,
+    bestNeuron,
+    allAccuracies,
+  };
 }
 
 const xData = [];
@@ -53,10 +89,14 @@ for (let i = 0; i < xData.length; i++) {
   });
 }
 
-const numTrials = 27000;
+const numTrials = 1000;
 const finalReport = runMultipleNeuronTrials(trainingSet, numTrials);
 
-console.log(`--- Final Neuron Report (after ${numTrials} runs) ---`);
-console.log(`Best Accuracy: ${(finalReport.bestAccuracy * 100).toFixed(2)}%`);
-console.log(`Mean Accuracy: ${(finalReport.meanAccuracy * 100).toFixed(2)}%`);
-console.log(`Worst Accuracy: ${(finalReport.worstAccuracy * 100).toFixed(2)}%`);
+console.log(`--- Relatório Final Neurônio (após ${numTrials} execuções) ---`);
+console.log(`Melhor Acurácia: ${(finalReport.bestAccuracy * 100).toFixed(2)}%`);
+console.log(`Acurácia Média: ${(finalReport.meanAccuracy * 100).toFixed(2)}%`);
+console.log(`Pior Acurácia: ${(finalReport.worstAccuracy * 100).toFixed(2)}%`);
+
+console.log("\nMelhor Mapeamento Encontrado:");
+const melhorTabela = analyzePredictions(finalReport.bestNeuron, xData, yLabels);
+console.table(melhorTabela);

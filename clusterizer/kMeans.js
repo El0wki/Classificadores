@@ -1,8 +1,6 @@
 import { euclideanDistance } from "../utils.js";
 
 const _initCentroids = (data, k) => {
-  if (k > data.length) k = data.length;
-
   const centroids = [];
   const usedIndexes = new Set();
   while (centroids.length < k) {
@@ -33,7 +31,7 @@ const _attributeClusters = (data, centroids) => {
   return attributed;
 };
 
-const _updateCentroids = (data, attributed, k) => {
+const _updateCentroids = (data, attributed, k, oldCentroids) => {
   const numDimensions = data[0].length;
   const clusterSum = new Array(k);
   const clusterCount = new Array(k).fill(0);
@@ -45,6 +43,7 @@ const _updateCentroids = (data, attributed, k) => {
   for (let i = 0; i < data.length; i++) {
     const point = data[i];
     const clusterIndex = attributed[i];
+    if (clusterIndex == null || clusterIndex < 0 || clusterIndex >= k) continue;
     clusterCount[clusterIndex]++;
     for (let j = 0; j < numDimensions; j++) {
       clusterSum[clusterIndex][j] += point[j];
@@ -54,7 +53,8 @@ const _updateCentroids = (data, attributed, k) => {
   const newCentroids = new Array(k);
   for (let i = 0; i < k; i++) {
     if (clusterCount[i] === 0) {
-      newCentroids[i] = clusterSum[i];
+      newCentroids[i] =
+        oldCentroids && oldCentroids[i] ? oldCentroids[i] : clusterSum[i];
     } else {
       newCentroids[i] = clusterSum[i].map((sum) => sum / clusterCount[i]);
     }
@@ -63,12 +63,17 @@ const _updateCentroids = (data, attributed, k) => {
 };
 
 export const kmeans = (data, k, maxIteractions = 1000) => {
+  if (!Array.isArray(data) || data.length === 0)
+    return { centroids: [], attributed: [] };
+
+  if (k > data.length) k = data.length;
+
   let centroids = _initCentroids(data, k);
   let attributed = [];
 
-  for (let i = 0; i < maxIteractions; i++) {
+  for (let iter = 0; iter < maxIteractions; iter++) {
     attributed = _attributeClusters(data, centroids);
-    const newCentroids = _updateCentroids(data, attributed, k);
+    const newCentroids = _updateCentroids(data, attributed, k, centroids);
     let changed = false;
     for (let i = 0; i < centroids.length; i++) {
       if (euclideanDistance(centroids[i], newCentroids[i]) > 0.001) {
@@ -78,7 +83,7 @@ export const kmeans = (data, k, maxIteractions = 1000) => {
     }
     centroids = newCentroids;
     if (!changed) {
-      console.log(`Convergiu em ${i + 1} iterações`);
+      console.log(`Convergiu em ${iter + 1} iterações`);
       break;
     }
   }
