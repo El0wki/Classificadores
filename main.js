@@ -1,9 +1,7 @@
-// ...existing code...
 import { kmeans } from "./clusterizer/kMeans.js";
 import { irisData } from "./material_apoio/iris.js";
 import test from "./clusterizer/test.js";
 import { performance } from "perf_hooks";
-// ...existing code...
 
 const data = [];
 const ans = [];
@@ -19,88 +17,44 @@ for (const line of irisData) {
   ans.push(line["species"]);
 }
 
-// configuração: ajuste repeat conforme necessário (cuidado com tempo total)
-const repeat = 100; // número de repetições por k
-const kStart = 1;
-const kEnd = 1000;
-
-const allResults = [];
-const globalStart = performance.now();
-
-for (let k = kStart; k <= kEnd; k++) {
-  const actualK = Math.min(k, data.length); // k não pode ser maior que número de pontos
-  const accuracies = [];
-  const times = [];
-  const startK = performance.now();
-
-  for (let i = 0; i < repeat; i++) {
-    const iterStart = performance.now();
-
-    const cluster = kmeans(data, actualK);
-    const analyzedClusters = test.analyzeClusters(cluster.attributed, ans);
-    const accurate = test.calcAccuracy(analyzedClusters, data.length);
-    accuracies.push(accurate);
-
-    const iterEnd = performance.now();
-    times.push(iterEnd - iterStart);
-  }
-
-  const endK = performance.now();
-
-  const sum = accuracies.reduce((s, v) => s + v, 0);
-  const avg = sum / accuracies.length;
-  const best = Math.max(...accuracies);
-  const worst = Math.min(...accuracies);
-
-  const timeSum = times.reduce((s, v) => s + v, 0);
-  const timeAvg = timeSum / times.length;
-  const timeBest = Math.min(...times);
-  const timeWorst = Math.max(...times);
-  const totalTimeK = endK - startK;
-
-  const result = {
-    k,
-    actualK,
-    avg,
-    best,
-    worst,
-    timeAvg,
-    timeBest,
-    timeWorst,
-    totalTimeK,
-    runs: repeat,
-  };
-
-  allResults.push(result);
-
-  console.log(
-    `k=${k} (use ${actualK}) → runs: ${repeat}, avg: ${avg.toFixed(
-      4
-    )}, best: ${best.toFixed(4)}, time avg(ms): ${timeAvg.toFixed(
-      3
-    )}, totalK(ms): ${totalTimeK.toFixed(1)}`
-  );
+const repeat = 10000;
+const k = 3;
+let accurate = [];
+for (let i = 0; i < repeat; i++) {
+  const clusters = kmeans(data, k);
+  const analyzed = test.analyzeClusters(clusters.attributed, ans);
+  accurate.push(test.calcAccuracy(analyzed));
 }
 
-const globalEnd = performance.now();
-const totalElapsed = globalEnd - globalStart;
-
-let bestByAvg = allResults[0];
-let bestBySingle = allResults[0];
-for (const r of allResults) {
-  if (r.avg > bestByAvg.avg) bestByAvg = r;
-  if (r.best > bestBySingle.best) bestBySingle = r;
-}
-
-console.log("\nSUMMARY:");
-console.log(
-  `best average -> k=${bestByAvg.k} (actual ${
-    bestByAvg.actualK
-  }), avg=${bestByAvg.avg.toFixed(4)}, best=${bestByAvg.best.toFixed(4)}`
+const stats = accurate.reduce(
+  (acc, v) => {
+    if (v < acc.min) acc.min = v;
+    if (v > acc.max) acc.max = v;
+    acc.count += 1;
+    acc.avg = acc.avg + (v - acc.avg) / acc.count;
+    return acc;
+  },
+  { min: Infinity, avg: 0, max: -Infinity, count: 0 }
 );
-console.log(
-  `best single run -> k=${bestBySingle.k} (actual ${
-    bestBySingle.actualK
-  }), best=${bestBySingle.best.toFixed(4)}`
-);
-console.log(`total elapsed all ks (ms): ${totalElapsed.toFixed(1)}`);
+
+const formatPct = (v) =>
+  v == null
+    ? ""
+    : v.toLocaleString(undefined, {
+        style: "percent",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+const summary = {
+  runs: stats.count,
+  min_fraction: Number(stats.min.toFixed(6)),
+  avg_fraction: Number(stats.avg.toFixed(6)),
+  max_fraction: Number(stats.max.toFixed(6)),
+  min_percent: formatPct(stats.min),
+  avg_percent: formatPct(stats.avg),
+  max_percent: formatPct(stats.max),
+};
+
+console.log("SUMMARY (overall):");
+console.table(summary);
