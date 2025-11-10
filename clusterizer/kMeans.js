@@ -7,7 +7,7 @@ const _initCentroids = (data, k) => {
     const randomIndex = Math.floor(Math.random() * data.length);
     if (!usedIndexes.has(randomIndex)) {
       usedIndexes.add(randomIndex);
-      centroids.push(data[randomIndex]);
+      centroids.push([...data[randomIndex]]);
     }
   }
   return centroids;
@@ -34,11 +34,10 @@ const _attributeClusters = (data, centroids) => {
 const _updateCentroids = (data, attributed, k, oldCentroids) => {
   const numDimensions = data[0].length;
   const clusterSum = new Array(k);
-  const clusterCount = new Array(k).fill(0);
-
   for (let i = 0; i < k; i++) {
     clusterSum[i] = new Array(numDimensions).fill(0);
   }
+  const clusterCount = new Array(k).fill(0);
 
   for (let i = 0; i < data.length; i++) {
     const point = data[i];
@@ -63,9 +62,6 @@ const _updateCentroids = (data, attributed, k, oldCentroids) => {
 };
 
 export const kmeans = (data, k, maxIteractions = 1000) => {
-  if (!Array.isArray(data) || data.length === 0)
-    return { centroids: [], attributed: [] };
-
   if (k > data.length) k = data.length;
 
   let centroids = _initCentroids(data, k);
@@ -83,7 +79,6 @@ export const kmeans = (data, k, maxIteractions = 1000) => {
     }
     centroids = newCentroids;
     if (!changed) {
-      console.log(`Convergiu em ${iter + 1} iterações`);
       break;
     }
   }

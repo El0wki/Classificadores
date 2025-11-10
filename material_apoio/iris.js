@@ -1,4 +1,4 @@
-export const data = [
+export const irisData = [
   {
     sepal_length: 5.1,
     sepal_width: 3.5,
